@@ -39,16 +39,16 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-    <!-- Service Worker Registration for PWA Installability (Chrome, Safari, Viber) -->
+    <!-- Service Worker Registration for PWA Installability (Chrome, Safari, PWABuilder, Viber) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(function(registration) {
               console.log('PWA ServiceWorker successfully registered with scope:', registration.scope);
             })
             .catch(function(error) {
-              console.warn('PWA ServiceWorker registration notice:', error);
+              navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(function() {});
             });
         });
       }

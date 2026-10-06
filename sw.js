@@ -14,7 +14,6 @@ const STATIC_ASSETS = [
   '/favicon-16x16.png'
 ];
 
-// Install: precache essential static assets & skip waiting
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -30,7 +29,6 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate: clean up older caches & claim clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -43,18 +41,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for navigation, cache-first for static assets
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
-
-  // Skip non-http schemes
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
-  // Navigation (HTML pages): Network-first with Cache fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -70,12 +62,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: Cache first with network fallback
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+      if (cachedResponse) return cachedResponse;
       return fetch(request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
           const clone = networkResponse.clone();
@@ -87,12 +76,10 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Handle Background Notification Actions & Clicks
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const action = event.action;
   const sessionData = event.notification.data || {};
-
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
@@ -111,7 +98,6 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Message listener
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SCHEDULE_SESSION_ALERT') {
     console.log('Session alert received in ServiceWorker:', event.data.session?.id);
