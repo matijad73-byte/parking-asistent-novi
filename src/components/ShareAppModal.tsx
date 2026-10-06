@@ -9,18 +9,25 @@ interface ShareAppModalProps {
 
 export const ShareAppModal: React.FC<ShareAppModalProps> = ({ isOpen, onClose }) => {
   const [shareSuccess, setShareSuccess] = useState(false);
-  const currentUrl =
-    typeof window !== 'undefined'
-      ? window.location.origin + window.location.pathname
-      : '';
 
   if (!isOpen) return null;
 
+  // Use the clean public URL for sharing so recipients never get Google auth or 404 errors
+  const getShareUrl = (): string => {
+    if (typeof window === 'undefined') return APP_CONFIG.publicShareUrl;
+    const hostname = window.location.hostname;
+    if (hostname.includes('ais-dev-') || hostname === 'localhost' || hostname === '127.0.0.1') {
+      return APP_CONFIG.publicShareUrl;
+    }
+    return window.location.origin + window.location.pathname;
+  };
+
   const handleSendLink = async () => {
+    const targetUrl = getShareUrl();
     const shareData = {
       title: APP_CONFIG.name,
       text: 'Brzo SMS plaćanje parkinga po zonama – radi 100% samostalno bez interneta:',
-      url: currentUrl,
+      url: targetUrl,
     };
 
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -39,10 +46,10 @@ export const ShareAppModal: React.FC<ShareAppModalProps> = ({ isOpen, onClose })
       }
     }
 
-    // Fallback if Web Share API is not supported or cancelled
+    // Fallback if Web Share API is not supported or was cancelled
     if (navigator.clipboard) {
       try {
-        await navigator.clipboard.writeText(currentUrl);
+        await navigator.clipboard.writeText(targetUrl);
         setShareSuccess(true);
         setTimeout(() => setShareSuccess(false), 3000);
       } catch (e) {
@@ -103,7 +110,7 @@ export const ShareAppModal: React.FC<ShareAppModalProps> = ({ isOpen, onClose })
 
           {shareSuccess && (
             <p className="text-xs text-center text-emerald-600 font-bold animate-fade-in">
-              ✓ Link je uspešno pripremljen i kopiran!
+              ✓ Link je uspešno pripremljen i poslat!
             </p>
           )}
         </div>
@@ -115,7 +122,7 @@ export const ShareAppModal: React.FC<ShareAppModalProps> = ({ isOpen, onClose })
             <span>Jednostavno za sve korisnike:</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Kada prijatelj otvori link, aplikacija se odmah pokreće na telefonu bez komplikovane instalacije. Može odmah da je koristi ili doda na početni ekran sa 1 klikom.
+            Kada prijatelj otvori link, aplikacija se odmah otvara u pregledaču bez ikakvog prijavljivanja ili Google naloga. Može odmah da je koristi ili instalira na telefon sa 1 dodirom.
           </p>
         </div>
 

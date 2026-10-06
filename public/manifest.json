@@ -1,22 +1,17 @@
 {
-  "id": "/?source=pwa",
+  "id": "/",
   "name": "Parking asistent",
   "short_name": "Parking",
-  "description": "Brzo i pouzdano SMS plaćanje parkinga po zonama u Srbiji i regionu - radi 100% samostalno bez interneta uz GPS detekciju zona i zvučne podsetnike pre isteka.",
+  "description": "Brzo i pouzdano SMS plaćanje parkinga po zonama u Srbiji i regionu - radi samostalno bez interneta uz GPS detekciju zona.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "orientation": "portrait",
   "lang": "sr",
   "dir": "ltr",
-  "categories": ["utilities", "navigation", "transportation", "lifestyle"],
-  "prefer_related_applications": false,
-  "launch_handler": {
-    "client_mode": "auto"
-  },
+  "categories": ["utilities", "navigation", "transportation"],
   "icons": [
     {
       "src": "/pwa-96x96.png",
@@ -53,63 +48,6 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "540x960",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Brzo plaćanje parkinga po zonama i pametni tajmer"
-    },
-    {
-      "src": "/screenshot-wide.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Interaktivna mapa, lokacija auta i pregled zona"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Plati Parking",
-      "short_name": "Plati",
-      "description": "Brzo plaćanje parkinga SMS porukom",
-      "url": "/",
-      "icons": [
-        {
-          "src": "/pwa-192x192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Istorija Parkiranja",
-      "short_name": "Istorija",
-      "description": "Pregled plaćenih parking karata",
-      "url": "/?tab=history",
-      "icons": [
-        {
-          "src": "/pwa-192x192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Lokacija Parkiranog Auta",
-      "short_name": "Moj Auto",
-      "description": "Pronađi parkirano vozilo",
-      "url": "/?tab=tracker",
-      "icons": [
-        {
-          "src": "/pwa-192x192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
     }
   ]
 }

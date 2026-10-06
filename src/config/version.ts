@@ -9,6 +9,7 @@ export const APP_CONFIG = {
   buildCode: 7,
   releaseDate: '2026-09-21',
   description: 'Brz i pouzdan asistent za automatski izbor zone i plaćanje parkinga SMS-om u Srbiji i regionu.',
+  publicShareUrl: 'https://ais-pre-dzhicdehqyudtciynjqa5x-560142873097.europe-west1.run.app',
 } as const;
 
 export const APP_VERSION = APP_CONFIG.version;

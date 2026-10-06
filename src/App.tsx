@@ -593,7 +593,13 @@ export default function App() {
 
   // 1-tap native mobile share (Viber / WhatsApp / SMS) or open friendly share dialog
   const handleShareClick = async () => {
-    const currentUrl = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
+    let currentUrl = APP_CONFIG.publicShareUrl;
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      if (!hostname.includes('ais-dev-') && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        currentUrl = window.location.origin + window.location.pathname;
+      }
+    }
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
