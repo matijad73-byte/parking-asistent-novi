@@ -1,0 +1,76 @@
+{
+  "background_color": "#ffffff",
+  "description": "Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta.",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Parking asistent",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Parking asistent",
+  "start_url": "/parking-asistent-novi/",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "https://matijad73-byte.github.io/icon.svg",
+      "type": "image/svg+xml",
+      "isSquare": false,
+      "isPng": false,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 0,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    },
+    {
+      "src": "https://matijad73-byte.github.io/favicon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32",
+      "isSquare": true,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 32,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    },
+    {
+      "src": "https://matijad73-byte.github.io/favicon-16x16.png",
+      "type": "image/png",
+      "sizes": "16x16",
+      "isSquare": true,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 16,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    },
+    {
+      "src": "https://matijad73-byte.github.io/apple-touch-icon.png",
+      "sizes": "180x180",
+      "isSquare": true,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 180,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    },
+    {
+      "src": "https://matijad73-byte.github.io/playstore-feature-graphic-1024x500.png",
+      "isSquare": false,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 0,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    }
+  ],
+  "lang": "sr"
+}
