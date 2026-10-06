@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="sr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Parking asistent</title>
+    <meta name="description" content="Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta." />
+    <meta property="og:title" content="Parking asistent" />
+    <meta property="og:description" content="Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/playstore-feature-graphic-1024x500.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Parking asistent" />
+    <meta name="twitter:description" content="Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta." />
+    <meta name="twitter:image" content="/playstore-feature-graphic-1024x500.png" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Parking asistent" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <script>
+      // Clean up any stale service workers or caches that could cause a white screen
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].unregister();
+          }
+        }).catch(function() {});
+      }
+      // Safety net: catch unhandled global errors and display clean recovery box instead of blank white screen
+      window.addEventListener('error', function(e) {
+        console.error('App error caught:', e.error || e.message);
+        var root = document.getElementById('root');
+        if (root && root.childNodes.length === 0) {
+          root.innerHTML = '<div style="min-height:100vh;background:#07111e;color:#f1f5f9;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif;">' +
+            '<div style="max-width:380px;background:#0c192c;padding:28px 24px;border-radius:24px;border:1px solid rgba(59,130,246,0.3);box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">' +
+            '<div style="width:48px;height:48px;margin:0 auto 16px;background:rgba(37,99,235,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#60a5fa;font-size:24px;font-weight:bold;">P</div>' +
+            '<h2 style="font-size:18px;margin-bottom:8px;font-weight:900;color:#ffffff;">Parking asistent</h2>' +
+            '<p style="font-size:12px;color:#94a3b8;margin-bottom:20px;line-height:1.5;">Osvežavanje aplikacije u toku...</p>' +
+            '<button onclick="location.reload()" style="background:#2563eb;color:#ffffff;border:none;padding:12px 24px;border-radius:14px;font-weight:bold;font-size:13px;cursor:pointer;width:100%;">Osveži ekran</button>' +
+            '</div></div>';
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-[#07111e] text-slate-100 antialiased select-none">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Parking asistent",
+  "description": "Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "packageId": "com.platiparking.asistent",
+  "host": "platiparking.app",
+  "name": "Parking asistent",
+  "launcherName": "Parking",
+  "display": "standalone",
+  "themeColor": "#0f172a",
+  "themeColorDark": "#0f172a",
+  "navigationColor": "#0f172a",
+  "navigationColorDark": "#0f172a",
+  "backgroundColor": "#0f172a",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "/pwa-512x512.png",
+  "maskableIconUrl": "/pwa-maskable-512x512.png",
+  "monochromeIconUrl": "/pwa-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "alias": "android",
+    "keyStorePath": "android.keystore"
+  },
+  "appVersionName": "1.6.0",
+  "appVersionCode": 6,
+  "shortcuts": [
+    {
+      "name": "Plati Parking",
+      "short_name": "Plati",
+      "url": "/",
+      "icon": "/pwa-192x192.png"
+    },
+    {
+      "name": "Istorija Parkiranja",
+      "short_name": "Istorija",
+      "url": "/?tab=history",
+      "icon": "/pwa-192x192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": {
+      "enabled": false
+    },
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false
+}

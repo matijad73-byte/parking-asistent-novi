@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Politika privatnosti - Parking asistent</title>
+  <meta name="description" content="Politika privatnosti aplikacije Parking asistent za Google Play Store. Saznajte kako štitimo vaše podatke.">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+      --accent-light: #34d399;
+      --border: #334155;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 24px 16px 64px 16px;
+    }
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+    }
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-light);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-light);
+      margin: 28px 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    p, li {
+      color: #cbd5e1;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .highlight-box {
+      background: rgba(15, 23, 42, 0.6);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .highlight-box p {
+      margin: 0;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+    }
+    a {
+      color: var(--accent-light);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+    .back-btn:hover {
+      background: #1e293b;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Google Play Store Zaštita Privatnosti</div>
+      <h1>Politika Privatnosti</h1>
+      <div class="subtitle">Aplikacija: <strong>Parking asistent</strong> (com.platiparking.asistent) – Poslednje ažuriranje: Septembar 2026.</div>
+    </div>
+    <div class="highlight-box">
+      <p>💡 <strong>Osnovno načelo:</strong> Aplikacija <em>Parking asistent</em> radi <strong>100% lokalno na vašem uređaju</strong>. Ne prikupljamo, ne čuvamo na eksternim serverima, ne delimo niti prodajemo vaše lične podatke trećim licima.</p>
+    </div>
+    <h2>1. Lokacija i GPS podaci (Geolocation)</h2>
+    <p>Aplikacija traži dozvolu za pristup lokaciji isključivo u sledeće svrhe:</p>
+    <ul>
+      <li>Automatsko prepoznavanje grada, ulice i pripadajuće parking zone u kojoj se trenutno nalazite.</li>
+      <li>Mogućnost beleženja lokacije vašeg parkiranog automobila ("Gde sam parkirao?") kako biste ga kasnije lakše pronašli.</li>
+    </ul>
+    <p><strong>Važno:</strong> Vaša GPS lokacija se obrađuje isključivo u radnoj memoriji vašeg uređaja. Aplikacija nema centralni server na koji šalje vaše kretanje, istoriju lokacija ili koordinate.</p>
+    <h2>2. SMS poruke i plaćanje parkinga</h2>
+    <p>Aplikacija poštuje sve smernice Google Play prodavnice o SMS porukama:</p>
+    <ul>
+      <li>Aplikacija <strong>NE šalje SMS poruke samostalno u pozadini</strong> i ne traži osetljivu <code>SEND_SMS</code> dozvolu.</li>
+      <li>Kada kliknete na dugme za plaćanje, aplikacija koristi standardni sistemski protokol (<code>sms:</code>) koji otvara vašu fabričku aplikaciju za SMS poruke sa unapred popunjenim brojem zone i vašom tablicom.</li>
+      <li><strong>Korisnik uvek ima punu kontrolu</strong> i sam potvrđuje slanje SMS poruke pritiskom na dugme pošalji unutar svoje aplikacije za poruke.</li>
+      <li>Aplikacija nema pristup vašim privatnim primljenim ili poslatim SMS porukama.</li>
+    </ul>
+    <h2>3. Registarske tablice i lokalna memorija</h2>
+    <p>Registarske tablice vaših vozila, sačuvane omiljene zone i istorija parkiranja čuvaju se isključivo u <strong>lokalnoj memoriji vašeg telefona</strong> (LocalStorage / IndexedDB). Ovi podaci nikada ne napuštaju vaš uređaj i brišu se ukoliko deinstalirate aplikaciju ili obrišete podatke pregledača.</p>
+    <h2>4. Obaveštenja i alarmi (Notifications)</h2>
+    <p>Dozvola za obaveštenja se koristi isključivo za zvučno i vizuelno obaveštavanje <strong>5 minuta pre isteka vašeg uplaćenog parkinga</strong>, kako biste na vreme mogli da produžite parking ili pomerite vozilo. Aplikacija ne šalje marketinške poruke, neželjene notifikacije niti promotivni sadržaj.</p>
+    <h2>5. Prava korisnika i brisanje podataka</h2>
+    <p>U svakom trenutku možete obrisati sve sačuvane podatke (tablice, istoriju i lokaciju auta) direktno u podešavanjima aplikacije jednim klikom na opciju "Obriši istoriju" ili brisanjem keša aplikacije u podešavanjima telefona.</p>
+    <h2>6. Kontakt</h2>
+    <p>Za sva pitanja u vezi sa funkcionisanjem aplikacije ili ovom Politikom privatnosti, možete se obratiti razvojnom timu putem email adrese: <a href="mailto:matijad73@gmail.com">matijad73@gmail.com</a>.</p>
+    <div class="footer">
+      <p>© 2026 Parking asistent. Sva prava zadržana. Usklađeno sa GDPR i Google Play Developer politikama.</p>
+      <a href="/" class="back-btn">← Nazad na aplikaciju</a>
+    </div>
+  </div>
+</body>
+</html>
