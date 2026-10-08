@@ -102,7 +102,9 @@ export default function App() {
   const [isResetAppDataOpen, setIsResetAppDataOpen] = useState(false);
   const [isValjevoStreetPickerOpen, setIsValjevoStreetPickerOpen] = useState(false);
   const [isPhoneFrame] = useState(true);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(() => {
+    return typeof window !== 'undefined' ? (window as any).deferredPrompt : null;
+  });
 
   // Terms & Conditions / Compliance modal (accessible via button or menu)
   const [isTermsOpen, setIsTermsOpen] = useState<boolean>(false);
@@ -196,8 +198,14 @@ export default function App() {
     window.addEventListener('offline', handleOffline);
 
     // PWA Install prompt listener
+    const handlePromptReady = () => {
+      setDeferredPrompt((window as any).deferredPrompt);
+    };
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
+
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
+      (window as any).deferredPrompt = e;
       setDeferredPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -205,11 +213,14 @@ export default function App() {
     // Installed event listener
     const handleAppInstalled = () => {
       setIsStandalone(true);
+      (window as any).deferredPrompt = null;
+      setDeferredPrompt(null);
       try {
         localStorage.setItem('parking_app_installed', 'true');
       } catch {}
     };
     window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('pwa-app-installed', handleAppInstalled);
 
     // Watch for standalone display mode change
     const mql = window.matchMedia('(display-mode: standalone)');
@@ -229,8 +240,10 @@ export default function App() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('pwa-app-installed', handleAppInstalled);
       mql.removeEventListener?.('change', handleMqlChange);
     };
   }, []);
@@ -570,35 +583,43 @@ export default function App() {
       isDefault: true,
     };
 
-  // Immediate 1-tap install if native browser prompt is ready, otherwise open beginner guide
-  const handleOpenInstall = async () => {
-    if (deferredPrompt) {
-      try {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          setIsStandalone(true);
-          try {
-            localStorage.setItem('parking_app_installed', 'true');
-          } catch {}
-          setDeferredPrompt(null);
-          return;
-        }
-      } catch (err) {
-        console.warn('Install prompt error:', err);
-      }
-    }
+  // Open installation details & compliance modal where 1-tap install prompt is triggered
+  const handleOpenInstall = () => {
     setIsPlayStoreOpen(true);
   };
+
+  const handleCloseInstall = () => {
+    setIsPlayStoreOpen(false);
+    try {
+      sessionStorage.setItem('parking_install_modal_dismissed', 'true');
+    } catch {}
+  };
+
+  // Auto-open install prompt for fresh visitors opening the link in mobile browser
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isStandalone) return;
+    try {
+      if (localStorage.getItem('parking_app_installed') === 'true') return;
+      if (sessionStorage.getItem('parking_install_modal_dismissed') === 'true') return;
+    } catch {}
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const hasInstallParam = searchParams.has('install') || searchParams.has('pwa');
+
+    // Give 1.2s so page renders smoothly and beforeinstallprompt event is captured
+    const timer = setTimeout(() => {
+      setIsPlayStoreOpen(true);
+    }, hasInstallParam ? 300 : 1200);
+
+    return () => clearTimeout(timer);
+  }, [isStandalone]);
 
   // 1-tap native mobile share (Viber / WhatsApp / SMS) or open friendly share dialog
   const handleShareClick = async () => {
     let currentUrl = APP_CONFIG.publicShareUrl;
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      if (!hostname.includes('ais-dev-') && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        currentUrl = window.location.origin + window.location.pathname;
-      }
+    if (typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null') {
+      currentUrl = window.location.origin + window.location.pathname;
     }
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
@@ -902,7 +923,7 @@ export default function App() {
       {/* Play Store & .APK Export Modal */}
       <PlayStoreExportModal
         isOpen={isPlayStoreOpen}
-        onClose={() => setIsPlayStoreOpen(false)}
+        onClose={handleCloseInstall}
         deferredPrompt={deferredPrompt}
       />
 

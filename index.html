@@ -1,12 +1,33 @@
 <!doctype html>
 <html lang="sr">
   <head>
-   <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Parking asistent</title>
     <meta name="description" content="Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta." />
     
+    <!-- Capture beforeinstallprompt Event at the very top of script evaluation -->
+    <script>
+      window.deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        console.log('PWA: beforeinstallprompt captured into window.deferredPrompt');
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+      });
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA: appinstalled event received');
+        window.deferredPrompt = null;
+        try {
+          localStorage.setItem('parking_app_installed', 'true');
+        } catch (_) {}
+        window.dispatchEvent(new CustomEvent('pwa-app-installed'));
+      });
+    </script>
+
+    <!-- PWA Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
+
     <!-- OpenGraph & Twitter Cards -->
     <meta property="og:title" content="Parking asistent" />
     <meta property="og:description" content="Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji, automatsko prepoznavanje ulica i zona, alarmi pre isteka i pamćenje lokacije auta." />
@@ -24,36 +45,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Parking asistent" />
 
-    <!-- Content Security Policy: Clean and permissive for OSM tiles, geocoding and local PWA -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; connect-src 'self' data: blob: https://nominatim.openstreetmap.org https://photon.komoot.io https://*.tile.openstreetmap.org; font-src 'self' data:; worker-src 'self' blob:; manifest-src 'self';"
-    />
-
-    <!-- PWA Web App Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-
     <!-- Application Icons -->
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-    <!-- Service Worker Registration for PWA Installability (Chrome, Safari, PWABuilder, Viber) -->
+    <!-- Safety net: catch unhandled global errors and display clean recovery box instead of blank white screen -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(function(registration) {
-              console.log('PWA ServiceWorker successfully registered with scope:', registration.scope);
-            })
-            .catch(function(error) {
-              navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(function() {});
-            });
-        });
-      }
-
-      // Safety net: catch unhandled global errors and display clean recovery box instead of blank white screen
       window.addEventListener('error', function(e) {
         console.error('App error caught:', e.error || e.message);
         var root = document.getElementById('root');
@@ -72,5 +72,20 @@
   <body class="bg-[#07111e] text-slate-100 antialiased select-none">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Service Worker Registration at bottom of index.html -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('PWA ServiceWorker registered successfully with scope:', registration.scope);
+            })
+            .catch((error) => {
+              console.warn('PWA ServiceWorker registration error:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

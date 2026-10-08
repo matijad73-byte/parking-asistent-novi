@@ -1,5 +1,46 @@
-// Simple and resilient Service Worker for Parking Asistent PWA & PWABuilder
-const CACHE_NAME = 'parking-asistent-v2';
+// Reliable and resilient PWA Service Worker (v11)
+const CACHE_NAME = 'parking-asistent-v11';
+
+const MANIFEST_PAYLOAD = {
+  "id": "/",
+  "name": "Parking Asistent",
+  "short_name": "Parking",
+  "description": "Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji i regionu.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "sr",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+};
+
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -7,72 +48,98 @@ const STATIC_ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
   '/icon.svg',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/apple-touch-icon.png',
   '/favicon-32x32.png',
   '/favicon-16x16.png'
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return Promise.all(
+      return Promise.allSettled(
         STATIC_ASSETS.map((url) =>
-          cache.add(url).catch((err) => {
-            console.warn('ServiceWorker pre-caching skipped for:', url, err);
+          fetch(url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => {
+            if (res && res.ok) {
+              return cache.put(url, res);
+            }
           })
         )
       );
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
     }).then(() => self.clients.claim())
   );
 });
 
+// Fetch listener - meets PWA installability requirements without breaking native browser navigation
 self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-  const url = new URL(request.url);
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  // CRITICAL: Let the browser handle page navigation natively so redirects, cookies, and auth bridges never fail
+  if (event.request.mode === 'navigate') {
+    return;
+  }
 
-  if (request.mode === 'navigate') {
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http') || url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Never intercept Vite dev server internal assets
+  if (url.pathname.startsWith('/@') || url.pathname.startsWith('/src') || url.pathname.startsWith('/node_modules')) {
+    return;
+  }
+
+  // Guaranteed clean application/json for /manifest.json (never returns HTML / 404 to browser)
+  if (url.pathname === '/manifest.json' || url.pathname.endsWith('manifest.json')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      fetch(event.request, { credentials: 'include' })
+        .then((networkRes) => {
+          const contentType = networkRes.headers.get('content-type') || '';
+          if (networkRes.status === 200 && contentType.includes('application/json')) {
+            return networkRes;
           }
-          return response;
+          // If network returned HTML or redirect or error, return the embedded pristine JSON
+          return new Response(JSON.stringify(MANIFEST_PAYLOAD), {
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          });
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+        .catch(() => {
+          return new Response(JSON.stringify(MANIFEST_PAYLOAD), {
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          });
+        })
     );
     return;
   }
 
+  // Fallback for any legacy icon requests
+  if (url.pathname.includes('pwa-144') || url.pathname.includes('pwa-96')) {
+    event.respondWith(
+      caches.match('/icon-192.png').then((res) => res || fetch('/icon-192.png'))
+    );
+    return;
+  }
+
+  // Network-first with cache fallback
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return networkResponse;
-      }).catch(() => cachedResponse);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
 
@@ -80,6 +147,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const action = event.action;
   const sessionData = event.notification.data || {};
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {

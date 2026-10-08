@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Parking asistent",
+  "name": "Parking Asistent",
   "short_name": "Parking",
-  "description": "Brzo i pouzdano SMS plaćanje parkinga po zonama u Srbiji i regionu - radi samostalno bez interneta uz GPS detekciju zona.",
+  "description": "Brzo i jednostavno SMS plaćanje parkinga po zonama u Srbiji i regionu.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,20 +10,30 @@
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "lang": "sr",
-  "dir": "ltr",
-  "categories": ["utilities", "navigation", "transportation"],
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

@@ -12,14 +12,12 @@ export const ShareAppModal: React.FC<ShareAppModalProps> = ({ isOpen, onClose })
 
   if (!isOpen) return null;
 
-  // Use the clean public URL for sharing so recipients never get Google auth or 404 errors
+  // Use the active working URL for sharing so recipients always open the live app
   const getShareUrl = (): string => {
-    if (typeof window === 'undefined') return APP_CONFIG.publicShareUrl;
-    const hostname = window.location.hostname;
-    if (hostname.includes('ais-dev-') || hostname === 'localhost' || hostname === '127.0.0.1') {
-      return APP_CONFIG.publicShareUrl;
+    if (typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null') {
+      return window.location.origin + window.location.pathname;
     }
-    return window.location.origin + window.location.pathname;
+    return APP_CONFIG.publicShareUrl;
   };
 
   const handleSendLink = async () => {
