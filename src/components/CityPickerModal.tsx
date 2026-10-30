@@ -21,9 +21,14 @@ export const CityPickerModal: React.FC<CityPickerModalProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredCities = cities.filter((city) =>
-    city.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const term = searchTerm.trim().toLowerCase();
+  const filteredCities = cities.filter((city) => {
+    if (!term) return true;
+    if (city.name.toLowerCase().includes(term)) return true;
+    if (city.operator?.toLowerCase().includes(term)) return true;
+    if (city.aliases?.some((a) => a.toLowerCase().includes(term))) return true;
+    return false;
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">

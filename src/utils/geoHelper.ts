@@ -1,7 +1,7 @@
 import { CityData, ParkingZone, ZoneDetectionResult, CustomLocationOverride } from '../types';
 import { REGIONAL_CITIES } from '../data/citiesData';
 import { VALJEVO_PARKING_JSON, matchValjevoStreet } from '../data/valjevoParkingData';
-import { CITY_ZONE_STREETS } from '../data/cityStreetsData';
+import { CITY_ZONE_STREETS, STREET_BORDER_RULES } from '../data/cityStreetsData';
 import {
   BELGRADE_ZONE_POLYGONS,
   ALL_CITY_ZONE_POLYGONS,
@@ -48,6 +48,163 @@ export function normalizeStreetSearch(text: string): string {
     .replace(/[,\.\-\/]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Finds a city from the regional database matching by official name or alias
+ * (e.g. "Ruma", "Opština Ruma", "Grad Šabac", "Novi Beograd", "Zemun", "Petrovaradin")
+ */
+export function findCityByAliasOrName(
+  query: string | undefined,
+  allCities: CityData[] = REGIONAL_CITIES
+): CityData | null {
+  if (!query) return null;
+  const norm = normalizeStreetSearch(query);
+  if (norm.length < 2) return null;
+
+  for (const c of allCities) {
+    const cNorm = normalizeStreetSearch(c.name);
+    if (norm === cNorm || norm.startsWith(cNorm + ' ') || norm.endsWith(' ' + cNorm)) {
+      return c;
+    }
+    if (c.aliases) {
+      for (const a of c.aliases) {
+        const aNorm = normalizeStreetSearch(a);
+        if (norm === aNorm || norm.startsWith(aNorm + ' ') || norm.endsWith(' ' + aNorm) || norm.includes(aNorm)) {
+          return c;
+        }
+      }
+    }
+  }
+
+  // Fallback: simple inclusion if norm length >= 4
+  if (norm.length >= 4) {
+    for (const c of allCities) {
+      const cNorm = normalizeStreetSearch(c.name);
+      if (norm.includes(cNorm) || cNorm.includes(norm)) {
+        return c;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extracts normalized street name and numeric house number from address string and optional house number hint.
+ */
+export function extractStreetAndHouseNumber(
+  streetOrAddress: string | undefined,
+  houseNumberHint?: string | number
+): {
+  cleanStreet: string;
+  rawStreet: string;
+  houseNumber?: number;
+  houseNumberSuffix?: string;
+} {
+  if (!streetOrAddress) {
+    return { cleanStreet: '', rawStreet: '' };
+  }
+  const rawStreet = cyrillicToLatin(streetOrAddress).trim();
+
+  let houseNumber: number | undefined = undefined;
+  let houseNumberSuffix: string | undefined = undefined;
+
+  if (houseNumberHint !== undefined && houseNumberHint !== null && String(houseNumberHint).trim() !== '') {
+    const numMatch = String(houseNumberHint).match(/\b(\d+)\s*([a-zA-ZčćžšđČĆŽŠĐ])?\b/);
+    if (numMatch) {
+      houseNumber = parseInt(numMatch[1], 10);
+      houseNumberSuffix = numMatch[2]?.toLowerCase();
+    }
+  }
+
+  if (houseNumber === undefined) {
+    const numMatch = rawStreet.match(/\b(\d+)\s*([a-zA-ZčćžšđČĆŽŠĐ])?\b/);
+    if (numMatch) {
+      houseNumber = parseInt(numMatch[1], 10);
+      houseNumberSuffix = numMatch[2]?.toLowerCase();
+    }
+  }
+
+  const cleanStreet = normalizeStreetSearch(
+    rawStreet
+      .replace(/,\s*[a-z\s]+$/, '') // remove trailing city
+      .replace(/\b\d+([a-zA-ZčćžšđČĆŽŠĐ])?\b/g, '') // remove numbers
+      .replace(/\b(ulica|ulice|ulici|bulevar|bulevara|bulevaru|trg|trga|trgu|kej|keja|keju|venac|venca|avenija|cesta|put|prolaz)\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
+
+  return { cleanStreet, rawStreet, houseNumber, houseNumberSuffix };
+}
+
+/**
+ * Priority Rule 1: Resolves exact address and house number using statutory street-border rules.
+ * Guarantees that exact addresses (e.g. Svetogorska 47) always receive the official zone and never
+ * get misassigned due to boundary polygon overlap or edge proximity.
+ */
+export function resolveAddressWithBorderRules(
+  streetOrAddress: string | undefined,
+  city: CityData,
+  houseNumberHint?: string | number
+): {
+  zone: ParkingZone;
+  streetMatched: string;
+  isBorderZone: boolean;
+  alternativeZone: ParkingZone | null;
+  borderExplanation?: string;
+  confidence: 'high';
+} | null {
+  if (!streetOrAddress) return null;
+  const { cleanStreet, houseNumber } = extractStreetAndHouseNumber(streetOrAddress, houseNumberHint);
+  if (!cleanStreet || cleanStreet.length < 3) return null;
+
+  // Check explicit border rules first (for boundary streets like Svetogorska, Takovska, Bulevar, etc.)
+  const cityBorderRules = STREET_BORDER_RULES.filter((r) => r.cityId === city.id);
+  for (const rule of cityBorderRules) {
+    const ruleStreetNorm = normalizeStreetSearch(rule.streetName);
+    if (cleanStreet === ruleStreetNorm || cleanStreet.includes(ruleStreetNorm) || ruleStreetNorm.includes(cleanStreet)) {
+      let matchedZoneId = rule.defaultZoneId;
+      let rangeExplanation = rule.borderExplanation;
+
+      if (rule.numberRanges && houseNumber !== undefined) {
+        for (const range of rule.numberRanges) {
+          const minOk = range.min === undefined || houseNumber >= range.min;
+          const maxOk = range.max === undefined || houseNumber <= range.max;
+          let parityOk = true;
+          if (range.parity === 'odd') parityOk = houseNumber % 2 !== 0;
+          if (range.parity === 'even') parityOk = houseNumber % 2 === 0;
+
+          if (minOk && maxOk && parityOk) {
+            matchedZoneId = range.zoneId;
+            if (range.description) {
+              rangeExplanation = `${range.description} (${houseNumber}).`;
+            }
+            break;
+          }
+        }
+      }
+
+      const targetZone = city.zones.find((z) => z.id === matchedZoneId) || city.zones[0];
+      const altZone = rule.alternativeZoneId
+        ? city.zones.find((z) => z.id === rule.alternativeZoneId) || null
+        : null;
+
+      const numStr = houseNumber ? ` ${houseNumber}` : '';
+      return {
+        zone: targetZone,
+        streetMatched: `${rule.streetName}${numStr}`,
+        isBorderZone: rule.isBorder,
+        alternativeZone: altZone,
+        borderExplanation: rangeExplanation || (rule.isBorder
+          ? `Nalazite se na adresi „${rule.streetName}${numStr}“ (${targetZone.name}). Nalazite se blizu granice sa drugom zonom.`
+          : undefined),
+        confidence: 'high',
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -161,7 +318,7 @@ export function detectStreetListZone(
       };
     } else {
       // For any other street_list city: match against official street lists from the municipal enterprise
-      const streetMatch = findZoneByStreetName(raw, city);
+      const streetMatch = findZoneByStreetName(raw, city, addressDetails?.houseNumber);
       if (streetMatch) {
         return {
           city,
@@ -183,7 +340,7 @@ export function detectStreetListZone(
       if (raw.includes(',') || raw.includes(';') || raw.includes('-')) {
         const parts = raw.split(/[,;\-]+/);
         for (const p of parts) {
-          const subMatch = findZoneByStreetName(p.trim(), city);
+          const subMatch = findZoneByStreetName(p.trim(), city, addressDetails?.houseNumber);
           if (subMatch) {
             return {
               city,
@@ -193,6 +350,9 @@ export function detectStreetListZone(
               reason: `Ulica na zvaničnom spisku naplate: ${subMatch.streetMatched} (${subMatch.zone.name} - ${city.operator || city.name})`,
               streetName: raw,
               streetMatched: subMatch.streetMatched,
+              isBorderZone: subMatch.isBorderZone,
+              alternativeZone: subMatch.alternativeZone,
+              borderExplanation: subMatch.borderExplanation,
             };
           }
         }
@@ -293,7 +453,8 @@ export function detectStreetListZone(
  */
 export function findZoneByStreetName(
   streetOrAddress: string | undefined,
-  city: CityData
+  city: CityData,
+  houseNumberHint?: string | number
 ): {
   zone: ParkingZone;
   streetMatched: string;
@@ -303,11 +464,14 @@ export function findZoneByStreetName(
   borderExplanation?: string;
 } | null {
   if (!streetOrAddress) return null;
-  const raw = streetOrAddress.trim();
-  const inputNorm = normalizeStreetSearch(raw);
-  if (inputNorm.length < 3) return null;
 
-  // Specific Valjevo smart disambiguation using detectStreetListZone with pure textual matching
+  // 1. Dedicated boundary & house-number rules (solves borders like Svetogorska, Takovska, Bulevar, etc.)
+  const borderMatch = resolveAddressWithBorderRules(streetOrAddress, city, houseNumberHint);
+  if (borderMatch) {
+    return borderMatch;
+  }
+
+  // 2. Specific Valjevo smart disambiguation using detectStreetListZone with pure textual matching
   if (city.id === 'valjevo') {
     const res = detectStreetListZone(streetOrAddress, 0, 0, city);
     if (res.zone && !res.isOutsidePaidZone) {
@@ -323,74 +487,87 @@ export function findZoneByStreetName(
     return null;
   }
 
-  // Clean common street prefixes, numbers, commas, and city names
-  const cleanInput = inputNorm
-    .replace(/,\s*[a-z\s]+$/, '') // remove trailing city like ", beograd" or ", valjevo"
-    .replace(/\b\d+([a-z])?\b/g, '') // remove house numbers
-    .replace(/\b(ulica|ulice|ulici|bulevar|bulevara|bulevaru|trg|trga|trgu|kej|keja|keju|venac|venca|avenija|cesta|put|prolaz)\b/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const { cleanStreet, rawStreet } = extractStreetAndHouseNumber(streetOrAddress, houseNumberHint);
+  if (!cleanStreet || cleanStreet.length < 3) return null;
 
-  const inputTokens = cleanInput.split(/\s+/).filter((t) => t.length >= 3);
+  const rawNorm = normalizeStreetSearch(rawStreet);
+  const inputTokens = cleanStreet.split(/\s+/).filter((t) => t.length >= 3);
 
-  // Check city zones in order (Zone 1 / Crvena / Ekstra first)
-  const sortedZones = [...city.zones].sort((a, b) => {
-    const aIs1 = a.code === '1' || a.code === '0' || a.id.includes('crvena') || a.id.includes('ekstra') || a.id.includes('1') || a.id.includes('zone-a');
-    const bIs1 = b.code === '1' || b.code === '0' || b.id.includes('crvena') || b.id.includes('ekstra') || b.id.includes('1') || b.id.includes('zone-a');
-    if (aIs1 && !bIs1) return -1;
-    if (!aIs1 && bIs1) return 1;
-    return 0;
-  });
-
-  for (const zone of sortedZones) {
-    // Gather streets from both zone.streets and CITY_ZONE_STREETS
+  // 3. Exact street name equality pass across all zones
+  for (const zone of city.zones) {
     const streetsFromConfig = zone.streets || [];
     const streetsFromMaster = CITY_ZONE_STREETS[city.id]?.[zone.id] || [];
     const allStreets = Array.from(new Set([...streetsFromConfig, ...streetsFromMaster]));
 
-    if (allStreets.length > 0) {
+    for (const streetPattern of allStreets) {
+      const patternNorm = normalizeStreetSearch(streetPattern);
+      const mainStreet = patternNorm.split('(')[0].trim();
+      const cleanPattern = mainStreet
+        .replace(/\b(ulica|ulice|ulici|bulevar|bulevara|bulevaru|trg|trga|trgu|kej|keja|keju|venac|venca|avenija|cesta|put|prolaz)\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (cleanStreet === cleanPattern && cleanPattern.length >= 3) {
+        return {
+          zone,
+          streetMatched: streetPattern,
+          confidence: 'high',
+        };
+      }
+    }
+  }
+
+  // 4. Direct containment pass (cleanPattern inside cleanStreet or vice versa)
+  for (const zone of city.zones) {
+    const streetsFromConfig = zone.streets || [];
+    const streetsFromMaster = CITY_ZONE_STREETS[city.id]?.[zone.id] || [];
+    const allStreets = Array.from(new Set([...streetsFromConfig, ...streetsFromMaster]));
+
+    for (const streetPattern of allStreets) {
+      const patternNorm = normalizeStreetSearch(streetPattern);
+      const mainStreet = patternNorm.split('(')[0].trim();
+      const cleanPattern = mainStreet
+        .replace(/\b(ulica|ulice|ulici|bulevar|bulevara|bulevaru|trg|trga|trgu|kej|keja|keju|venac|venca|avenija|cesta|put|prolaz)\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (cleanPattern.length >= 4 && (cleanStreet.includes(cleanPattern) || cleanPattern.includes(cleanStreet))) {
+        return {
+          zone,
+          streetMatched: streetPattern,
+          confidence: 'high',
+        };
+      }
+
+      if (mainStreet.length >= 4 && (rawNorm.includes(mainStreet) || mainStreet.includes(rawNorm))) {
+        return {
+          zone,
+          streetMatched: streetPattern,
+          confidence: 'high',
+        };
+      }
+    }
+  }
+
+  // 5. Significant word token matching fallback
+  if (inputTokens.length > 0) {
+    for (const zone of city.zones) {
+      const streetsFromConfig = zone.streets || [];
+      const streetsFromMaster = CITY_ZONE_STREETS[city.id]?.[zone.id] || [];
+      const allStreets = Array.from(new Set([...streetsFromConfig, ...streetsFromMaster]));
+
       for (const streetPattern of allStreets) {
         const patternNorm = normalizeStreetSearch(streetPattern);
-        const mainStreet = patternNorm.split('(')[0].trim();
-        const cleanPattern = mainStreet
-          .replace(/\b(ulica|ulice|ulici|bulevar|bulevara|bulevaru|trg|trga|trgu|kej|keja|keju|venac|venca|avenija|cesta|put|prolaz)\b/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        // 1. Direct containment
+        const matchCount = inputTokens.filter((token) => patternNorm.includes(token)).length;
         if (
-          mainStreet.length >= 3 &&
-          (inputNorm.includes(mainStreet) || mainStreet.includes(inputNorm))
+          matchCount >= 2 ||
+          (inputTokens.length === 1 && matchCount === 1 && inputTokens[0].length >= 5 && patternNorm.includes(inputTokens[0]))
         ) {
           return {
             zone,
             streetMatched: streetPattern,
-            confidence: 'high',
+            confidence: 'medium',
           };
-        }
-
-        // 2. Clean containment without prefixes & numbers
-        if (
-          cleanPattern.length >= 4 &&
-          (cleanInput.includes(cleanPattern) || cleanPattern.includes(cleanInput))
-        ) {
-          return {
-            zone,
-            streetMatched: streetPattern,
-            confidence: 'high',
-          };
-        }
-
-        // 3. Significant word token matching (e.g. "Kralja Petra" -> match "kralja", "petra")
-        if (inputTokens.length > 0) {
-          const matchCount = inputTokens.filter((token) => patternNorm.includes(token)).length;
-          if (matchCount >= 2 || (inputTokens.length === 1 && matchCount === 1 && inputTokens[0].length >= 5 && patternNorm.includes(inputTokens[0]))) {
-            return {
-              zone,
-              streetMatched: streetPattern,
-              confidence: 'medium',
-            };
-          }
         }
       }
     }
@@ -636,9 +813,26 @@ export const KNOWN_FREE_PARKING_KEYWORDS = [
 export function findNearestCity(
   lat: number,
   lng: number,
-  customCities: CityData[] = []
+  customCities: CityData[] = [],
+  hintCityName?: string
 ): { city: CityData; distanceKm: number } {
   const allCities = [...customCities, ...REGIONAL_CITIES];
+
+  // 1. If reverse geocoding provided a city or municipality name, match directly by name or alias
+  if (hintCityName) {
+    const matched = findCityByAliasOrName(hintCityName, allCities);
+    if (matched) {
+      const d = lat && lng && lat > 0 && lng > 0
+        ? calculateDistanceMeters(lat, lng, matched.lat, matched.lng)
+        : 0;
+      return {
+        city: matched,
+        distanceKm: Math.round(d / 1000),
+      };
+    }
+  }
+
+  // 2. Spatial nearest city fallback
   let nearestCity = allCities[0] || REGIONAL_CITIES[0];
   let minDistanceMeters = Infinity;
 
@@ -919,7 +1113,7 @@ export function findBestZoneForLocation(
   // If the detected street matches any street in the official city parking lists, resolve immediately with high confidence
   const detectedStreetOrAddress = addressDetails?.streetName || addressDetails?.fullAddress;
   if (detectedStreetOrAddress) {
-    const streetZoneMatch = findZoneByStreetName(detectedStreetOrAddress, city);
+    const streetZoneMatch = findZoneByStreetName(detectedStreetOrAddress, city, addressDetails?.houseNumber);
     if (streetZoneMatch) {
       return {
         city,
@@ -927,7 +1121,7 @@ export function findBestZoneForLocation(
         isOutsidePaidZone: false,
         detectionMethod: 'street_list',
         reason: `Ulica u sistemu naplate: ${streetZoneMatch.streetMatched} (${streetZoneMatch.zone.name})`,
-        streetName: addressDetails?.streetName,
+        streetName: addressDetails?.streetName || detectedStreetOrAddress,
         houseNumber: addressDetails?.houseNumber,
         suburbName: addressDetails?.suburbName,
         address: addressDetails?.fullAddress,
@@ -964,8 +1158,7 @@ export function findBestZoneForLocation(
       };
     }
 
-    // 4b. Boundary / Edge Snapping (Tolerance ~350m)
-    // If user's GPS is within 350m of a polygon perimeter, snap to the nearest zone
+    // 4b. Boundary / Edge Snapping (Strict tolerance <= 45m to prevent false zone jumps)
     let closestPoly: (typeof cityPolygons)[0] | null = null;
     let minPolyDist = Infinity;
     for (const poly of cityPolygons) {
@@ -976,7 +1169,7 @@ export function findBestZoneForLocation(
       }
     }
 
-    if (closestPoly && minPolyDist <= 350) {
+    if (closestPoly && minPolyDist <= 45) {
       const matchedZone = city.zones.find(
         (z) => z.id === closestPoly!.zoneId || z.code === closestPoly!.code || z.smsNumber === closestPoly!.smsNumber
       );
@@ -1279,8 +1472,8 @@ export function findNearestCityAndZone(
   lat: number,
   lng: number,
   customCities: CityData[] = [],
-  addressDetails?: { streetName?: string; houseNumber?: string; suburbName?: string; fullAddress?: string }
+  addressDetails?: { streetName?: string; houseNumber?: string; suburbName?: string; fullAddress?: string; cityName?: string }
 ): ZoneDetectionResult {
-  const { city } = findNearestCity(lat, lng, customCities);
+  const { city } = findNearestCity(lat, lng, customCities, addressDetails?.cityName);
   return findBestZoneForLocation(lat, lng, city, addressDetails);
 }

@@ -39,6 +39,7 @@ export interface CityData {
   lng: number;
   radiusKm: number;
   detectionMethod?: ZoneDetectionMethod; // 'polygon' (Beograd, Novi Sad, etc.) or 'street_list' (Valjevo, etc.)
+  aliases?: string[]; // Alternative search names and municipal aliases (e.g. 'Opština Ruma', 'Grad Šabac')
   zones: ParkingZone[];
   paymentSchedule?: string; // e.g. "Pon-Pet 07:00-21:00, Sub 07:00-14:00, Nedeljom besplatno"
   infoNotice?: string;

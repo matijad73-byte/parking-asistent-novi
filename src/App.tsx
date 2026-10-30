@@ -292,8 +292,7 @@ export default function App() {
         };
         setUserCoords(coords);
 
-        // Fetch address details for smart street & suburb parsing
-        let addressDetails: { streetName?: string; houseNumber?: string; suburbName?: string; fullAddress?: string } | undefined;
+        let addressDetails: { streetName?: string; houseNumber?: string; suburbName?: string; fullAddress?: string; cityName?: string } | undefined;
         try {
           const details = await reverseGeocodeDetails(coords.lat, coords.lng);
           addressDetails = {
@@ -301,6 +300,7 @@ export default function App() {
             houseNumber: details.houseNumber,
             suburbName: details.suburbName,
             fullAddress: details.fullAddress,
+            cityName: details.cityName,
           };
         } catch {
           // ignore network failure
